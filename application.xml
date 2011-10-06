@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="ASCII"?>
+<application xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+		xmlns="http://java.sun.com/xml/ns/javaee" 
+		xmlns:application="http://java.sun.com/xml/ns/javaee/application_5.xsd" 
+		xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_5.xsd" 
+		version="5">
+	<display-name>
+		app-name
+	</display-name>
+	<module>
+		<ejb>
+			module-2.3.4.jar
+		</ejb>
+	</module>
+	<module>
+		<java>
+			java-module.x.223.1.jar
+		</java>
+	</module>
+	<module>
+		<web>
+			<web-uri>
+				web-module-1.2.3.war
+			</web-uri>
+			<context-root>
+				ScapeAdmin
+			</context-root>
+		</web>
+	</module>
+	<library-directory>
+		libs
+	</library-directory>
+</application>

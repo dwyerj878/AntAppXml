@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="AppXml" basedir="." default="jar">
+
+	<target name="clean" description="Delete all generated files">
+		<delete dir="build" failOnerror="false" />
+		<delete file="${ant.project.name}.jar" failOnerror="false" />
+	</target>
+
+	<target name="compile" description="Compiles the Task">
+		<mkdir dir="build" />
+		<javac srcdir="src" destdir="build" />
+	</target>
+
+	<target name="jar" depends="clean, compile" description="JARs the Task">
+		<jar destfile="${ant.project.name}.jar" basedir="build" />
+	</target>
+
+	<target name="use" description="Use the Task" depends="jar">
+		<taskdef name="AppXml" classname="net.dev.jcd.ant.app.AppXml" classpath="${ant.project.name}.jar" />
+		<AppXml appxml="application.xml" displayname="app-name" librarydirectory="libs" j2eeversion="5">
+			<module type="ejb">
+				<fileset dir="modules">
+					<include name="module*.jar" />
+				</fileset>
+			</module>
+			
+			<module type="java">
+				<fileset dir="modules">
+					<include name="java-module*.jar" />
+				</fileset>
+			</module>
+
+			<module type="war" contextRoot="ScapeAdmin">
+				<fileset dir="modules">
+					<include name="web-module*.war" />
+				</fileset>
+			</module>
+
+		</AppXml>
+
+	</target>
+
+</project>
