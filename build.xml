@@ -15,7 +15,7 @@
 		<jar destfile="${ant.project.name}.jar" basedir="build" />
 	</target>
 
-	<target name="use" description="Use the Task" depends="jar">
+	<target name="use" description="Use the Task to create bogus Application.xml" depends="jar">
 		<taskdef name="AppXml" classname="net.dev.jcd.ant.app.AppXml" classpath="${ant.project.name}.jar" />
 		<AppXml appxml="application.xml" displayname="app-name" librarydirectory="libs" j2eeversion="5">
 			<module type="ejb">
