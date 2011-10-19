@@ -94,8 +94,18 @@ public class Module extends DataType {
 		if (fileSet != null) {
 			throw new BuildException("Only one fileset per module");
 		}
-		this.fileSet = new FileSet();
+		setFileSet(new FileSet());
 		return fileSet;
+	}
+
+	/**
+	 * Exposed for testing
+	 * 
+	 * @param fileSet
+	 */
+	public void setFileSet(final FileSet fileSet) {
+		this.fileSet = fileSet;
+
 	}
 
 	/**
