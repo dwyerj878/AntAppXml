@@ -9,6 +9,7 @@ import java.util.List;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.EnumeratedAttribute;
+import org.apache.tools.ant.types.resources.FileResource;
 
 /**
  * Ant task to create a JBoss Application XML file
@@ -109,33 +110,36 @@ public class AppXml extends Task {
 			for (Module fs : modules) {
 				fs.validate();
 
-				bus.println(INDENT_1 + MODULE_START);
-				String name = fs.getFile().getName();
-				if (fs.isWar()) {
-					bus.println(INDENT_2 + WEB_START);
-					bus.println(INDENT_3 + WEB_URI_START);
-					bus.print(INDENT_4);
-					bus.println(name);
-					bus.println(INDENT_3 + WEB_URI_END);
+				for (FileResource fileResource : fs.getFiles()) {
+					String name = fileResource.getFile().getName();
+					bus.println(INDENT_1 + MODULE_START);
 
-					bus.println(INDENT_3 + CONTEXT_ROOT_START);
-					bus.print(INDENT_4);
-					bus.println(fs.getContextRoot());
-					bus.println(INDENT_3 + CONTEXT_ROOT_END);
-					bus.println(INDENT_2 + WEB_END);
-				} else if (fs.isEjb()) {
-					bus.println(INDENT_2 + EJB_START);
-					bus.print(INDENT_3);
-					bus.println(name);
-					bus.println(INDENT_2 + EJB_END);
-				} else {
-					bus.println(INDENT_2 + JAVA_START);
-					bus.print(INDENT_3);
-					bus.println(name);
-					bus.println(INDENT_2 + JAVA_END);
+					if (fs.isWar()) {
+						bus.println(INDENT_2 + WEB_START);
+						bus.println(INDENT_3 + WEB_URI_START);
+						bus.print(INDENT_4);
+						bus.println(name);
+						bus.println(INDENT_3 + WEB_URI_END);
+
+						bus.println(INDENT_3 + CONTEXT_ROOT_START);
+						bus.print(INDENT_4);
+						bus.println(fs.getContextRoot());
+						bus.println(INDENT_3 + CONTEXT_ROOT_END);
+						bus.println(INDENT_2 + WEB_END);
+					} else if (fs.isEjb()) {
+						bus.println(INDENT_2 + EJB_START);
+						bus.print(INDENT_3);
+						bus.println(name);
+						bus.println(INDENT_2 + EJB_END);
+					} else {
+						bus.println(INDENT_2 + JAVA_START);
+						bus.print(INDENT_3);
+						bus.println(name);
+						bus.println(INDENT_2 + JAVA_END);
+					}
+					bus.println(INDENT_1 + MODULE_END);
+
 				}
-				bus.println(INDENT_1 + MODULE_END);
-
 			}
 			if (libraryDirectory != null) {
 				bus.println(INDENT_1 + LIBRARY_DIRECTORY_START);
