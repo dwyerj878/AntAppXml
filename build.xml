@@ -17,7 +17,7 @@
 
 	<target name="use" description="Use the Task to create bogus Application.xml" depends="jar">
 		<taskdef name="AppXml" classname="net.dev.jcd.ant.app.AppXml" classpath="${ant.project.name}.jar" />
-		<AppXml appxml="application.xml" displayname="app-name" librarydirectory="libs" j2eeversion="5">
+		<AppXml appxml="application.xml" displayname="app-name" librarydirectory="libs" j2eeversion="6">
 			<module type="ejb">
 				<fileset dir="modules">
 					<include name="module*.jar" />
@@ -30,7 +30,7 @@
 				</fileset>
 			</module>
 
-			<module type="war" contextRoot="ScapeAdmin">
+			<module type="war" contextRoot="webRoot">
 				<fileset dir="modules">
 					<include name="web-module*.war" />
 				</fileset>
