@@ -1,15 +1,25 @@
 package net.dev.jcd.ant.app;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.EnumeratedAttribute;
 import org.apache.tools.ant.types.resources.FileResource;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Ant task to create a JBoss Application XML file
@@ -19,10 +29,6 @@ import org.apache.tools.ant.types.resources.FileResource;
  * 
  */
 public class AppXml extends Task {
-	private static final String INDENT_1 = "\t"; //$NON-NLS-1$
-	private static final String INDENT_2 = "\t\t"; //$NON-NLS-1$
-	private static final String INDENT_3 = "\t\t\t"; //$NON-NLS-1$
-	private static final String INDENT_4 = "\t\t\t\t"; //$NON-NLS-1$
 	private static final String J2EE_VERSION_5 = "5"; //$NON-NLS-1$
 	private static final String J2EE_VERSION_6 = "6"; //$NON-NLS-1$
 	
@@ -60,68 +66,90 @@ public class AppXml extends Task {
 			}
 			log("Creating app xml " + appXmlFilename); //$NON-NLS-1$
 			File output = new File(appXmlFilename);
-			PrintStream bus = new PrintStream(output);
+			
+            DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
+            Document doc = docBuilder.newDocument();
+            
+            doc.setXmlVersion("1.0");
 
-			bus.println(Messages.getString("AppXml.xml.header")); //$NON-NLS-1$
-
-			if (getVersion() == 6) {
-				bus.println(Messages.getString("AppXml.tag.application.j2ee6")); // $NON-NLS-2$
-			} else {
-				bus.println(Messages.getString("AppXml.tag.application.j2ee5")); // $NON-NLS-1$
-			}
-
-			bus.println(INDENT_1 + Messages.getString("AppXml.tag.display.name")); //$NON-NLS-1$;
-			bus.print(INDENT_2);
-			bus.println(displayName);
-			bus.println(INDENT_1 + Messages.getString("AppXml.tag.display.name.end")); //$NON-NLS-1$
+            // Using attributes to set namespace values because we care about the values not
+            // about the validation
+            Element app = doc.createElement("application");
+            app.setAttribute("xmlns","http://java.sun.com/xml/ns/javaee");
+            if (getVersion() == 6) {
+        		app.setAttribute("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance");
+        		app.setAttribute("xsi:schemaLocation","http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_6.xsd");
+        		app.setAttribute("version","6");
+            } else {
+	            app.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+	            app.setAttribute("xmlns:application", "http://java.sun.com/xml/ns/javaee/application_5.xsd");
+	            app.setAttribute("xsi:schemaLocation","http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_5.xsd");
+				app.setAttribute("version", "5");
+            }
+			doc.appendChild(app);
+			
+			
+			Element displayNameElement = doc.createElement("display-name");
+			displayNameElement.setTextContent(displayName);
+			app.appendChild(displayNameElement);
 
 			for (Module fs : modules) {
 				fs.validate();
 
 				for (FileResource fileResource : fs.getFiles()) {
 					String name = fileResource.getFile().getName();
-					bus.println(INDENT_1 + Messages.getString("AppXml.tag.module")); //$NON-NLS-1$;
 
+					Element moduleElement = doc.createElement("module");
 					if (fs.isWar()) {
-						bus.println(INDENT_2 + Messages.getString("AppXml.tag.web")); //$NON-NLS-1$
-						bus.println(INDENT_3 + Messages.getString("AppXml.tag.web.uri")); //$NON-NLS-1$;
-						bus.print(INDENT_4);
-						bus.println(name);
-						bus.println(INDENT_3 + Messages.getString("AppXml.tag.web.uri.end")); //$NON-NLS-1$
-
-						bus.println(INDENT_3 + Messages.getString("AppXml.tag.context.root")); //$NON-NLS-1$;
-						bus.print(INDENT_4);
-						bus.println(fs.getContextRoot());
-						bus.println(INDENT_3 + Messages.getString("AppXml.tag.context.root.end")); //$NON-NLS-1$
-						bus.println(INDENT_2 + Messages.getString("AppXml.tag.web.end")); //$NON-NLS-1$;
+						Element webElement = doc.createElement("web");
+						Element webUriElement = doc.createElement("web-uri");
+						webUriElement.setTextContent(name);
+						Element contextRootElement = doc.createElement("context-root");
+						contextRootElement.setTextContent(fs.getContextRoot());
+						moduleElement.appendChild(webElement);
+						webElement.appendChild(webUriElement);
+						webElement.appendChild(contextRootElement);
+						
 					} else if (fs.isEjb()) {
-						bus.println(INDENT_2 + Messages.getString("AppXml.tag.ejb")); //$NON-NLS-1$;
-						bus.print(INDENT_3);
-						bus.println(name);
-						bus.println(INDENT_2 + Messages.getString("AppXml.tag.ejb.end")); // $NON-NLS-1$
+						Element ejbElement = doc.createElement("ejb");
+						ejbElement.setTextContent(name);
+						moduleElement.appendChild(ejbElement);
 					} else {
-						bus.println(INDENT_2 + Messages.getString("AppXml.tag.java")); //$NON-NLS-1$
-						bus.print(INDENT_3);
-						bus.println(name);
-						bus.println(INDENT_2 + Messages.getString("AppXml.tag.java.end")); //$NON-NLS-1$
+						Element javaElement = doc.createElement("java");
+						javaElement.setTextContent(name);
+						moduleElement.appendChild(javaElement);
 					}
-					bus.println(INDENT_1 + Messages.getString("AppXml.tag.module.end")); //$NON-NLS-1$;
-
+					app.appendChild(moduleElement);
 				}
 			}
 			if (libraryDirectory != null) {
-				bus.println(INDENT_1 + Messages.getString("AppXml.tag.library.dir")); //$NON-NLS-1$
-				bus.print(INDENT_2);
-				bus.println(libraryDirectory);
-				bus.println(INDENT_1 + Messages.getString("AppXml.tag.library.dir.end")); //$NON-NLS-1$
-
+				Element libraryElement = doc.createElement("library-directory");
+				libraryElement.setTextContent(libraryDirectory);
+				app.appendChild(libraryElement);
 			}
-			bus.println(Messages.getString("AppXml.tag.application.end")); // $NON-NLS-1$
-			bus.close();
 
-		} catch (FileNotFoundException exception) {
-			exception.printStackTrace();
-			throw new RuntimeException(exception);
+			
+			// XML Out
+			TransformerFactory transfac = TransformerFactory.newInstance();
+			Transformer trans = transfac.newTransformer();
+			trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+			trans.setOutputProperty(OutputKeys.INDENT, "yes");
+
+			trans.setOutputProperty(OutputKeys.ENCODING, "ASCII");
+			
+			//create string from xml tree
+			
+			StreamResult result = new StreamResult(output);
+			DOMSource source = new DOMSource(doc);
+			trans.transform(source, result);
+
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (TransformerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 

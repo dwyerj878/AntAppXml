@@ -12,7 +12,9 @@
 	</target>
 
 	<target name="jar" depends="clean, compile" description="JARs the Task">
-		<jar destfile="${ant.project.name}.jar" basedir="build" />
+		<jar destfile="${ant.project.name}.jar" basedir="build" >
+			<fileset dir="resources"> </fileset>
+		</jar>
 	</target>
 
 	<target name="use" description="Use the Task to create bogus Application.xml" depends="jar">
