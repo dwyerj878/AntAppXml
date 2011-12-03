@@ -10,7 +10,7 @@ The project was started to solve the problem of using dynamically resolved depen
 
  	<target name="use" description="Use the Task to create Application.xml" depends="jar">
 		<taskdef name="AppXml" classname="net.dev.jcd.ant.app.AppXml" classpath="${ant.project.name}.jar" />
-		<AppXml appxml="application.xml" displayname="app-name" librarydirectory="libs" j2eeversion="6">
+		<AppXml appxml="application.xml" displayname="application-name" librarydirectory="libs" j2eeversion="6">
 			<module type="ejb">
 				<fileset dir="modules">
 					<include name="module*.jar" />
