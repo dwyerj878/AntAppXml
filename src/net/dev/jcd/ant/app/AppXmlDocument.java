@@ -17,6 +17,7 @@ import org.w3c.dom.Element;
  * @author jcdwyer
  * 
  */
+// $Id$
 public class AppXmlDocument {
 	private static final String TAG_APPLICATION = "application"; //$NON-NLS-1$
 	private static final String TAG_LIBRARY_DIRECTORY = "library-directory"; //$NON-NLS-1$
