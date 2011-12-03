@@ -17,7 +17,9 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.EnumeratedAttribute;
+import org.apache.tools.ant.types.LogLevel;
 import org.apache.tools.ant.types.resources.FileResource;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -29,6 +31,15 @@ import org.w3c.dom.Element;
  * 
  */
 public class AppXml extends Task {
+	private static final String TAG_APPLICATION = "application"; //$NON-NLS-1$
+	private static final String TAG_LIBRARY_DIRECTORY = "library-directory"; //$NON-NLS-1$
+	private static final String TAG_JAVA = "java"; //$NON-NLS-1$
+	private static final String TAG_EJB = "ejb"; //$NON-NLS-1$
+	private static final String TAG_DISPLAY_NAME = "display-name"; //$NON-NLS-1$
+	private static final String TAG_MODULE = "module"; //$NON-NLS-1$
+	private static final String TAG_WEB = "web"; //$NON-NLS-1$
+	private static final String TAG_WEB_URI = "web-uri"; //$NON-NLS-1$
+	private static final String TAG_CONTEXT_ROOT = "context-root"; //$NON-NLS-1$
 	private static final String J2EE_VERSION_5 = "5"; //$NON-NLS-1$
 	private static final String J2EE_VERSION_6 = "6"; //$NON-NLS-1$
 	
@@ -58,6 +69,9 @@ public class AppXml extends Task {
 		return module;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.apache.tools.ant.Task#execute()
+	 */
 	@Override
 	public void execute() {
 		try {
@@ -67,30 +81,18 @@ public class AppXml extends Task {
 			log("Creating app xml " + appXmlFilename); //$NON-NLS-1$
 			File output = new File(appXmlFilename);
 			
-            DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
-            DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
-            Document doc = docBuilder.newDocument();
-            
-            doc.setXmlVersion("1.0");
+			
+			// Create Document
+            Document doc = createDocument();
+            Comment createdBy = doc.createComment(Messages.getString("AppXml.msg.created.by")); //$NON-NLS-1$
+            doc.appendChild(createdBy);
 
-            // Using attributes to set namespace values because we care about the values not
-            // about the validation
-            Element app = doc.createElement("application");
-            app.setAttribute("xmlns","http://java.sun.com/xml/ns/javaee");
-            if (getVersion() == 6) {
-        		app.setAttribute("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance");
-        		app.setAttribute("xsi:schemaLocation","http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_6.xsd");
-        		app.setAttribute("version","6");
-            } else {
-	            app.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-	            app.setAttribute("xmlns:application", "http://java.sun.com/xml/ns/javaee/application_5.xsd");
-	            app.setAttribute("xsi:schemaLocation","http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_5.xsd");
-				app.setAttribute("version", "5");
-            }
+            Element app = doc.createElement(TAG_APPLICATION); 
+            setApplicationAttributes(app);
 			doc.appendChild(app);
 			
-			
-			Element displayNameElement = doc.createElement("display-name");
+			// Add "display-name" element
+			Element displayNameElement = doc.createElement(TAG_DISPLAY_NAME); 
 			displayNameElement.setTextContent(displayName);
 			app.appendChild(displayNameElement);
 
@@ -100,23 +102,23 @@ public class AppXml extends Task {
 				for (FileResource fileResource : fs.getFiles()) {
 					String name = fileResource.getFile().getName();
 
-					Element moduleElement = doc.createElement("module");
+					Element moduleElement = doc.createElement(TAG_MODULE); 
 					if (fs.isWar()) {
-						Element webElement = doc.createElement("web");
-						Element webUriElement = doc.createElement("web-uri");
+						Element webElement = doc.createElement(TAG_WEB); 
+						Element webUriElement = doc.createElement(TAG_WEB_URI); 
 						webUriElement.setTextContent(name);
-						Element contextRootElement = doc.createElement("context-root");
+						Element contextRootElement = doc.createElement(TAG_CONTEXT_ROOT); 
 						contextRootElement.setTextContent(fs.getContextRoot());
 						moduleElement.appendChild(webElement);
 						webElement.appendChild(webUriElement);
 						webElement.appendChild(contextRootElement);
 						
 					} else if (fs.isEjb()) {
-						Element ejbElement = doc.createElement("ejb");
+						Element ejbElement = doc.createElement(TAG_EJB); 
 						ejbElement.setTextContent(name);
 						moduleElement.appendChild(ejbElement);
 					} else {
-						Element javaElement = doc.createElement("java");
+						Element javaElement = doc.createElement(TAG_JAVA); 
 						javaElement.setTextContent(name);
 						moduleElement.appendChild(javaElement);
 					}
@@ -124,7 +126,7 @@ public class AppXml extends Task {
 				}
 			}
 			if (libraryDirectory != null) {
-				Element libraryElement = doc.createElement("library-directory");
+				Element libraryElement = doc.createElement(TAG_LIBRARY_DIRECTORY); 
 				libraryElement.setTextContent(libraryDirectory);
 				app.appendChild(libraryElement);
 			}
@@ -133,24 +135,75 @@ public class AppXml extends Task {
 			// XML Out
 			TransformerFactory transfac = TransformerFactory.newInstance();
 			Transformer trans = transfac.newTransformer();
-			trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-			trans.setOutputProperty(OutputKeys.INDENT, "yes");
-
-			trans.setOutputProperty(OutputKeys.ENCODING, "ASCII");
+			trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no"); //$NON-NLS-1$
+			trans.setOutputProperty(OutputKeys.INDENT, "yes"); //$NON-NLS-1$
+			trans.setOutputProperty(OutputKeys.ENCODING, "ASCII"); //$NON-NLS-1$
+			trans.setOutputProperty(OutputKeys.STANDALONE, "yes"); //$NON-NLS-1$
 			
-			//create string from xml tree
-			
+			// Save Result
 			StreamResult result = new StreamResult(output);
 			DOMSource source = new DOMSource(doc);
 			trans.transform(source, result);
 
 		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log(e, LogLevel.ERR.getLevel());
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log(e, LogLevel.ERR.getLevel());
 		}
+	}
+
+	/**
+	 * Create and return a new {@link Document}
+	 * 
+	 * @return created {@link Document}
+	 * @throws ParserConfigurationException
+	 */
+	private Document createDocument() throws ParserConfigurationException {
+		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
+		Document doc = docBuilder.newDocument();
+		
+		doc.setXmlVersion("1.0"); //$NON-NLS-1$
+		return doc;
+	}
+
+	/**
+	 * Set the application attributes for the name spaces<br>
+	 * we use attributes instead of dom namespace methods because we need the values<br>
+	 * as they are not "valid" namespaces
+	 * 
+	 * @param app
+	 */
+	private void setApplicationAttributes(Element app) {
+		app.setAttribute("xmlns","http://java.sun.com/xml/ns/javaee"); //$NON-NLS-1$ //$NON-NLS-2$
+		if (getVersion() == 6) {
+			setV6Attributes(app);
+		} else {
+		    setV5Attributes(app);
+		}
+	}
+
+	/**
+	 * Attributes for V5 (JBoss 5/6)
+	 * 
+	 * @param app
+	 */
+	private void setV5Attributes(Element app) {
+		app.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"); //$NON-NLS-1$ //$NON-NLS-2$
+		app.setAttribute("xmlns:application", "http://java.sun.com/xml/ns/javaee/application_5.xsd"); //$NON-NLS-1$ //$NON-NLS-2$
+		app.setAttribute("xsi:schemaLocation","http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_5.xsd"); //$NON-NLS-1$ //$NON-NLS-2$
+		app.setAttribute("version", "5"); //$NON-NLS-1$ //$NON-NLS-2$
+	}
+
+	/**
+	 * Attributes for V6 (JBoss 7)
+	 * 
+	 * @param app
+	 */
+	private void setV6Attributes(Element app) {
+		app.setAttribute("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance"); //$NON-NLS-1$ //$NON-NLS-2$
+		app.setAttribute("xsi:schemaLocation","http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_6.xsd"); //$NON-NLS-1$ //$NON-NLS-2$
+		app.setAttribute("version","6"); //$NON-NLS-1$ //$NON-NLS-2$ $NON-NLS-2$
 	}
 
 	private int getVersion() {
