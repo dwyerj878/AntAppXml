@@ -32,3 +32,5 @@ The project was started to solve the problem of using dynamically resolved depen
 		</AppXml>
 
 	</target>
+
+// --
